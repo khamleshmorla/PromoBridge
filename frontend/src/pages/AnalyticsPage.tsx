@@ -27,7 +27,7 @@ export default function AnalyticsPage() {
   useEffect(() => {
     async function fetchAnalytics() {
       try {
-        const res = await fetch(`${API_BASE_URL}/public/campaigns`).catch(() => null);
+        const res = await fetch(`${API_BASE_URL}/discovery/campaigns`).catch(() => null);
         if (res && res.ok) {
           const json = await res.json();
           setCampaigns(json.data || json.content || json || []);

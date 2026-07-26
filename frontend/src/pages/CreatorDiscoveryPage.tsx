@@ -34,7 +34,7 @@ export default function CreatorDiscoveryPage() {
   useEffect(() => {
     async function fetchCreators() {
       try {
-        const res = await fetch(`${API_BASE_URL}/public/creators`).catch(() => null);
+        const res = await fetch(`${API_BASE_URL}/discovery/creators`).catch(() => null);
         if (res && res.ok) {
           const json = await res.json();
           setCreators(json.data || json.content || json || []);

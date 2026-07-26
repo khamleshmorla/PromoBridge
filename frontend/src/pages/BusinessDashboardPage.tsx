@@ -77,8 +77,8 @@ export default function BusinessDashboardPage() {
     async function fetchData() {
       try {
         const [cmpRes, creRes] = await Promise.all([
-          fetch(`${API_BASE_URL}/public/campaigns`).catch(() => null),
-          fetch(`${API_BASE_URL}/public/creators`).catch(() => null)
+          fetch(`${API_BASE_URL}/discovery/campaigns`).catch(() => null),
+          fetch(`${API_BASE_URL}/discovery/creators`).catch(() => null)
         ]);
 
         if (cmpRes && cmpRes.ok) {
