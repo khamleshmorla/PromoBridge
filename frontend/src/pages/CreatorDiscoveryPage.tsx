@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
-  Search, MapPin, Users as UsersIcon, Shield, Sparkles, MessageSquare
+  Search, MapPin, Users as UsersIcon, Shield, Sparkles, MessageSquare, Star
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { API_BASE_URL } from '../api/client';
@@ -14,7 +14,8 @@ interface CreatorItem {
   followers?: number;
   location?: string;
   instagramUsername?: string;
-  matchScore?: number;
+  profileImageUrl?: string;
+  averageRating?: number;
   isVerified?: boolean;
 }
 
@@ -51,10 +52,14 @@ export default function CreatorDiscoveryPage() {
 
   const filtered = creators.filter((c) => {
     const nameMatch = (c.name || '').toLowerCase().includes(search.toLowerCase());
-    const catMatch = (c.category || '').toLowerCase().includes(search.toLowerCase());
+    const bioMatch = (c.bio || '').toLowerCase().includes(search.toLowerCase());
     const locMatch = (c.location || '').toLowerCase().includes(search.toLowerCase());
-    const matchesSearch = nameMatch || catMatch || locMatch;
-    const matchesCategory = categoryFilter === 'ALL' || (c.category || '').toLowerCase() === categoryFilter.toLowerCase();
+    const matchesSearch = nameMatch || bioMatch || locMatch;
+    
+    const matchesCategory = categoryFilter === 'ALL' ||
+      (c.bio || '').toLowerCase().includes(categoryFilter.toLowerCase()) ||
+      (c.category || '').toLowerCase().includes(categoryFilter.toLowerCase());
+      
     return matchesSearch && matchesCategory;
   });
 
@@ -63,7 +68,7 @@ export default function CreatorDiscoveryPage() {
       {/* Header */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Discover Creators</h1>
-        <p className="text-muted-foreground text-sm mt-1">Browse live content creator profiles from the PostgreSQL database</p>
+        <p className="text-muted-foreground text-sm mt-1">Browse live content creator profiles from the database ({creators.length} available)</p>
       </motion.div>
 
       {/* Search & Filters */}
@@ -71,18 +76,19 @@ export default function CreatorDiscoveryPage() {
         className="flex flex-col sm:flex-row gap-3">
         <div className="flex-1 relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <input type="text" placeholder="Search by name, category, location..." value={search} onChange={(e) => setSearch(e.target.value)}
+          <input type="text" placeholder="Search by name, bio, location..." value={search} onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-border bg-card text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" />
         </div>
         <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}
           className="px-4 py-2.5 rounded-xl border border-border bg-card text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all">
           <option value="ALL">All Categories</option>
           <option value="Lifestyle">Lifestyle</option>
-          <option value="Tech">Tech</option>
-          <option value="Fitness">Fitness</option>
-          <option value="Food">Food & Beverage</option>
-          <option value="Fashion">Fashion</option>
-          <option value="Entertainment">Entertainment</option>
+          <option value="Tech">Tech & Gadgets</option>
+          <option value="Fitness">Fitness & Health</option>
+          <option value="Food">Food & Dining</option>
+          <option value="Fashion">Fashion & Style</option>
+          <option value="Gaming">Gaming & Esports</option>
+          <option value="Travel">Travel & Adventure</option>
         </select>
       </motion.div>
 
@@ -105,9 +111,13 @@ export default function CreatorDiscoveryPage() {
               <div className="space-y-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-lg font-bold text-primary">
-                      {creator.name ? creator.name.charAt(0) : 'C'}
-                    </div>
+                    {creator.profileImageUrl ? (
+                      <img src={creator.profileImageUrl} alt={creator.name} className="w-12 h-12 rounded-full object-cover border border-primary/20" />
+                    ) : (
+                      <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-lg font-bold text-primary">
+                        {creator.name ? creator.name.charAt(0) : 'C'}
+                      </div>
+                    )}
                     <div>
                       <div className="font-semibold text-sm flex items-center gap-1">
                         {creator.name}
@@ -116,6 +126,12 @@ export default function CreatorDiscoveryPage() {
                       <div className="text-xs text-muted-foreground">@{creator.instagramUsername || 'creator'}</div>
                     </div>
                   </div>
+
+                  {creator.averageRating && (
+                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full">
+                      <Star className="w-3 h-3 fill-amber-500" /> {creator.averageRating}
+                    </span>
+                  )}
                 </div>
 
                 <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">{creator.bio || 'Content creator available for brand collaborations.'}</p>
