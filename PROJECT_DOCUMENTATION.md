@@ -85,23 +85,24 @@ PromoBridge employs a decoupled, RESTful microservice architecture. The React fr
 
 #### 5.2.1 Use Case Diagram
 ```mermaid
-usecaseDiagram
-    actor Business as "Business User"
-    actor Creator as "Creator User"
+flowchart LR
+    Business((Business User))
+    Creator((Creator User))
     
-    package "Collably AI (PromoBridge)" {
-        usecase "Authenticate (Login/Signup)" as UC1
-        usecase "Select Permanent Role" as UC2
+    subgraph PromoBridge["Collably AI (PromoBridge)"]
+        direction TB
+        UC1([Authenticate Login/Signup])
+        UC2([Select Permanent Role])
         
-        usecase "Generate Campaign via AI" as UC3
-        usecase "Publish Campaign" as UC4
-        usecase "Discover Creators" as UC5
-        usecase "Manage Applications" as UC6
+        UC3([Generate Campaign via AI])
+        UC4([Publish Campaign])
+        UC5([Discover Creators])
+        UC6([Manage Applications])
         
-        usecase "Browse Sponsorships" as UC7
-        usecase "Submit Application" as UC8
-        usecase "Manage Creator Profile" as UC9
-    }
+        UC7([Browse Sponsorships])
+        UC8([Submit Application])
+        UC9([Manage Creator Profile])
+    end
     
     Business --> UC1
     Creator --> UC1
