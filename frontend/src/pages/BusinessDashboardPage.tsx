@@ -3,12 +3,12 @@ import { motion } from 'framer-motion';
 import {
   Megaphone, Users, CheckCircle2, MessageSquare, Bell,
   ArrowUpRight, ArrowDownRight, BarChart3, Plus, Eye,
-  Rocket
+  Rocket, TrendingUp
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { API_BASE_URL } from '../api/client';
 
-// Stat Card
+const BASE = 'https://promobridge-api.onrender.com/api';
+
 function StatCard({ icon: Icon, label, value, trend, trendUp, gradient, to }: {
   icon: React.ElementType; label: string; value: string | number; trend: string; trendUp: boolean; gradient: string; to?: string;
 }) {
@@ -31,11 +31,9 @@ function StatCard({ icon: Icon, label, value, trend, trendUp, gradient, to }: {
       </div>
     </motion.div>
   );
-
   return to ? <Link to={to} className="block">{content}</Link> : content;
 }
 
-// Quick Action Card
 function QuickAction({ icon: Icon, label, description, to, gradient }: {
   icon: React.ElementType; label: string; description: string; to: string; gradient: string;
 }) {
@@ -53,19 +51,27 @@ function QuickAction({ icon: Icon, label, description, to, gradient }: {
   );
 }
 
+interface CreatorItem {
+  id: string;
+  name: string;
+  followers?: number;
+  location?: string;
+  instagramUsername?: string;
+  profileImageUrl?: string;
+  averageRating?: number;
+}
+
 interface CampaignItem {
   id: string;
   title: string;
   status: string;
-  category?: string;
 }
 
-interface CreatorItem {
-  id: string;
-  name: string;
-  category?: string;
-  followers?: number;
-  matchScore?: number;
+function formatFollowers(n?: number): string {
+  if (!n) return '0';
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M';
+  if (n >= 1_000) return (n / 1_000).toFixed(0) + 'K';
+  return n.toString();
 }
 
 export default function BusinessDashboardPage() {
@@ -77,23 +83,19 @@ export default function BusinessDashboardPage() {
     async function fetchData() {
       try {
         const [cmpRes, creRes] = await Promise.all([
-          fetch(`${API_BASE_URL}/discovery/campaigns`).catch(() => null),
-          fetch(`${API_BASE_URL}/discovery/creators`).catch(() => null)
+          fetch(`${BASE}/discovery/campaigns?page=0&size=100`).catch(() => null),
+          fetch(`${BASE}/discovery/creators?page=0&size=100`).catch(() => null),
         ]);
 
         if (cmpRes && cmpRes.ok) {
           const json = await cmpRes.json();
-          const list = Array.isArray(json.data) ? json.data : (json.data?.content || json.content || []);
-          setCampaigns(list);
+          setCampaigns(json?.data?.content ?? json?.content ?? []);
         }
 
         if (creRes && creRes.ok) {
           const json = await creRes.json();
-          const list = Array.isArray(json.data) ? json.data : (json.data?.content || json.content || []);
-          setCreators(list);
+          setCreators(json?.data?.content ?? json?.content ?? []);
         }
-      } catch {
-        // Handle network error quietly
       } finally {
         setLoading(false);
       }
@@ -101,35 +103,38 @@ export default function BusinessDashboardPage() {
     fetchData();
   }, []);
 
-  const totalCampaigns = campaigns.length;
-  const runningCampaigns = campaigns.filter(c => c.status === 'ACTIVE').length;
-  const completedCampaigns = campaigns.filter(c => c.status === 'COMPLETED').length;
+  const totalCampaigns   = campaigns.length;
+  const activeCampaigns  = campaigns.filter(c => c.status === 'ACTIVE').length;
+  const completedCount   = campaigns.filter(c => c.status === 'COMPLETED').length;
 
   const stats = [
-    { icon: Megaphone, label: 'Total Campaigns', value: totalCampaigns, trend: 'From DB', trendUp: true, gradient: 'from-violet-500 to-purple-600', to: '/dashboard/campaigns' },
-    { icon: Rocket, label: 'Running Campaigns', value: runningCampaigns, trend: 'Active', trendUp: true, gradient: 'from-cyan-500 to-blue-600', to: '/dashboard/campaigns' },
-    { icon: CheckCircle2, label: 'Completed', value: completedCampaigns, trend: 'Finished', trendUp: true, gradient: 'from-emerald-500 to-green-600', to: '/dashboard/campaigns' },
-    { icon: Users, label: 'Total Applications', value: 0, trend: 'Real time', trendUp: true, gradient: 'from-amber-500 to-orange-600', to: '/dashboard/applications' },
-    { icon: MessageSquare, label: 'Unread Messages', value: 0, trend: 'Inbox', trendUp: false, gradient: 'from-rose-500 to-pink-600', to: '/dashboard/messages' },
-    { icon: Bell, label: 'Notifications', value: 0, trend: 'Live', trendUp: true, gradient: 'from-indigo-500 to-violet-600', to: '/dashboard/notifications' },
+    { icon: Megaphone,    label: 'Total Campaigns',      value: loading ? '—' : totalCampaigns,  trend: 'All time',    trendUp: true,  gradient: 'from-violet-500 to-purple-600', to: '/dashboard/campaigns' },
+    { icon: Rocket,       label: 'Active Campaigns',     value: loading ? '—' : activeCampaigns, trend: 'Running now', trendUp: true,  gradient: 'from-cyan-500 to-blue-600',     to: '/dashboard/campaigns' },
+    { icon: CheckCircle2, label: 'Completed',            value: loading ? '—' : completedCount,  trend: 'Delivered',   trendUp: true,  gradient: 'from-emerald-500 to-green-600', to: '/dashboard/campaigns' },
+    { icon: Users,        label: 'Creator Network',      value: loading ? '—' : creators.length, trend: 'Available',   trendUp: true,  gradient: 'from-amber-500 to-orange-600',  to: '/dashboard/creators' },
+    { icon: MessageSquare,label: 'Messages',             value: 0,                               trend: 'Inbox',       trendUp: false, gradient: 'from-rose-500 to-pink-600',     to: '/dashboard/messages' },
+    { icon: Bell,         label: 'Notifications',        value: 0,                               trend: 'Latest',      trendUp: true,  gradient: 'from-indigo-500 to-violet-600', to: '/dashboard/notifications' },
   ];
 
   return (
     <div className="space-y-8 max-w-7xl">
-      {/* Welcome */}
+
+      {/* ── Welcome ─────────────────────────────── */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
         className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Business Dashboard 🏢</h1>
-          <p className="text-muted-foreground text-sm mt-1">Live metrics directly connected to PostgreSQL Database.</p>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Welcome back 👋</h1>
+          <p className="text-muted-foreground text-sm mt-1">
+            Here's what's happening with your campaigns today.
+          </p>
         </div>
         <Link to="/dashboard/campaigns/new"
-          className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 rounded-xl text-sm font-medium hover:opacity-90 transition-all shadow-lg shadow-primary/20">
+          className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 rounded-xl text-sm font-semibold hover:opacity-90 transition-all shadow-lg shadow-primary/20">
           <Plus className="w-4 h-4" /> New Campaign
         </Link>
       </motion.div>
 
-      {/* Stats Grid */}
+      {/* ── Stats ───────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
         {stats.map((stat, i) => (
           <motion.div key={stat.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
@@ -138,46 +143,104 @@ export default function BusinessDashboardPage() {
         ))}
       </div>
 
+      {/* ── Main Columns ─────────────────────────── */}
       <div className="grid lg:grid-cols-3 gap-6">
-        {/* Left Column: Quick Actions */}
+
+        {/* Quick Actions */}
         <div className="lg:col-span-2 space-y-6">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
+            className="rounded-2xl border border-border/50 bg-card p-6">
+            <h2 className="text-lg font-semibold mb-4">What do you want to do?</h2>
+            <div className="grid sm:grid-cols-2 gap-3">
+              <QuickAction icon={Plus}      label="Create a Campaign"    description="Set up a new influencer campaign"       to="/dashboard/campaigns/new" gradient="from-violet-500 to-purple-600" />
+              <QuickAction icon={Users}     label="Find Creators"        description="Browse creators who match your brand"   to="/dashboard/creators"      gradient="from-cyan-500 to-blue-600" />
+              <QuickAction icon={Eye}       label="Review Applications"  description="See who applied to your campaigns"      to="/dashboard/applications"  gradient="from-amber-500 to-orange-600" />
+              <QuickAction icon={BarChart3} label="Campaign Analytics"   description="Track reach, engagement and ROI"        to="/dashboard/analytics"     gradient="from-emerald-500 to-green-600" />
+            </div>
+          </motion.div>
+
+          {/* Campaign activity strip */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
             className="rounded-2xl border border-border/50 bg-card p-6">
-            <h2 className="text-lg font-semibold mb-4">Quick Actions</h2>
-            <div className="grid sm:grid-cols-2 gap-3">
-              <QuickAction icon={Plus} label="Create Campaign" description="Launch a new campaign" to="/dashboard/campaigns/new" gradient="from-violet-500 to-purple-600" />
-              <QuickAction icon={Users} label="Find Creators" description="Browse DB creators" to="/dashboard/creators" gradient="from-cyan-500 to-blue-600" />
-              <QuickAction icon={Eye} label="View Applications" description="Review live applications" to="/dashboard/applications" gradient="from-amber-500 to-orange-600" />
-              <QuickAction icon={BarChart3} label="Analytics" description="Campaign metrics" to="/dashboard/analytics" gradient="from-emerald-500 to-green-600" />
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-primary" /> Your Campaigns
+              </h2>
+              <Link to="/dashboard/campaigns" className="text-xs text-primary font-semibold hover:underline">See all</Link>
             </div>
+            {loading ? (
+              <div className="flex flex-col items-center py-8 gap-2">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
+                <p className="text-xs text-muted-foreground">Loading…</p>
+              </div>
+            ) : campaigns.length === 0 ? (
+              <div className="text-center py-8">
+                <Megaphone className="w-10 h-10 text-muted-foreground/30 mx-auto mb-2" />
+                <p className="text-sm text-muted-foreground">You haven't launched any campaigns yet.</p>
+                <Link to="/dashboard/campaigns/new"
+                  className="inline-flex items-center gap-1.5 mt-3 px-4 py-2 bg-primary text-primary-foreground text-xs font-semibold rounded-xl hover:opacity-90 transition-opacity">
+                  <Plus className="w-3.5 h-3.5" /> Create your first campaign
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {campaigns.slice(0, 5).map((c) => (
+                  <div key={c.id} className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/40 transition-colors">
+                    <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center text-sm font-bold text-primary flex-shrink-0">
+                      {c.title?.charAt(0) ?? 'C'}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{c.title}</p>
+                    </div>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${c.status === 'ACTIVE' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-muted text-muted-foreground'}`}>
+                      {c.status}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
           </motion.div>
         </div>
 
-        {/* Right Column: Database Creators */}
-        <div className="space-y-6">
+        {/* Creator Spotlight */}
+        <div>
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}
-            className="rounded-2xl border border-border/50 bg-card p-6">
+            className="rounded-2xl border border-border/50 bg-card p-6 h-full">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold">Available Creators ({creators.length})</h2>
-              <Link to="/dashboard/creators" className="text-xs text-primary font-medium hover:underline">View all</Link>
+              <h2 className="text-lg font-semibold">Top Creators</h2>
+              <Link to="/dashboard/creators" className="text-xs text-primary font-semibold hover:underline">
+                View all {creators.length > 0 ? `(${creators.length})` : ''}
+              </Link>
             </div>
-            
+
             {loading ? (
-              <div className="text-center py-6 text-sm text-muted-foreground">Loading database creators...</div>
+              <div className="flex flex-col items-center py-8 gap-2">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
+                <p className="text-xs text-muted-foreground">Loading…</p>
+              </div>
             ) : creators.length === 0 ? (
-              <div className="text-center py-6 text-sm text-muted-foreground">No creators in database yet.</div>
+              <div className="text-center py-8">
+                <Users className="w-10 h-10 text-muted-foreground/30 mx-auto mb-2" />
+                <p className="text-sm text-muted-foreground">No creators available right now.</p>
+              </div>
             ) : (
               <div className="space-y-3">
-                {creators.slice(0, 4).map((c) => (
-                  <div key={c.id || c.name} className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/30 transition-colors cursor-pointer border border-border/30">
-                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-sm font-bold text-primary">
-                      {c.name ? c.name.charAt(0) : 'C'}
-                    </div>
+                {creators.slice(0, 5).map((c) => (
+                  <Link key={c.id} to="/dashboard/creators"
+                    className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-muted/40 transition-colors group">
+                    {c.profileImageUrl ? (
+                      <img src={c.profileImageUrl} alt={c.name}
+                        className="w-10 h-10 rounded-full object-cover border border-primary/10 flex-shrink-0" />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-sm font-bold text-primary flex-shrink-0">
+                        {c.name?.charAt(0) ?? 'C'}
+                      </div>
+                    )}
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium truncate">{c.name}</div>
-                      <div className="text-xs text-muted-foreground">{c.category || 'Creator'} · {c.followers ? c.followers.toLocaleString() : 0} followers</div>
+                      <p className="text-sm font-semibold truncate group-hover:text-primary transition-colors">{c.name}</p>
+                      <p className="text-xs text-muted-foreground">@{c.instagramUsername} · {formatFollowers(c.followers)} followers</p>
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
             )}
