@@ -1,174 +1,240 @@
-# 📘 Collably AI (PromoBridge) — Industry Standard Technical Documentation
+# PROJECT DOCUMENTATION
+**Project Title:** Collably AI (PromoBridge) - AI-Powered Influencer Collaboration Marketplace
 
 ---
 
-## 📋 Executive Summary
+## Acknowledgement
+I would like to express my profound gratitude to everyone who contributed to the successful completion of this project. Special thanks to the open-source communities behind Spring Boot, React, Supabase, and Google Gemini for providing the robust tools and frameworks that made this application possible. This project stands as a testament to modern web development practices and the power of artificial intelligence in solving real-world business challenges.
 
-**Collably AI** (PromoBridge) is an enterprise-grade, two-sided AI-powered marketplace designed to connect local businesses with content creators (influencers). By integrating **Google Gemini AI**, **Spring Boot 3**, **React 19**, and **Supabase PostgreSQL**, the platform automates influencer marketing workflows—from campaign brief generation to creator discovery, deal proposals, and campaign analytics.
+## Declaration
+I hereby declare that the project entitled "Collably AI (PromoBridge)" is an original piece of work. The system architecture, software implementation, and documentation are developed following industry-standard software engineering principles. References to external libraries, frameworks, and APIs have been duly acknowledged where applicable.
 
 ---
 
-## 🏗 System Architecture & Design Philosophy
+## Abstract
+Influencer marketing has become a cornerstone of digital advertising, yet the process of discovering creators, negotiating rates, and managing campaigns remains fragmented and inefficient. **Collably AI (PromoBridge)** is a comprehensive, AI-driven two-sided marketplace designed to bridge the gap between businesses and content creators. 
 
-The application employs a **decoupled, microservices-ready, cloud-native architecture**.
+Built using a modern technology stack—React 19 (Frontend), Spring Boot 3 (Backend), Supabase PostgreSQL (Database), and Google Gemini AI—the platform offers a seamless ecosystem. Businesses can leverage Generative AI to instantly draft structured campaign proposals, browse a live database of vetted creators, and track applications. Conversely, creators are provided with a dedicated suite to discover sponsorship opportunities, submit tailored proposals, and manage their portfolios. By centralizing these operations and enforcing strict role-based access control, PromoBridge significantly reduces friction, fostering transparent and high-ROI collaborations.
 
+---
+
+## Chapter 1: Introduction
+
+### 1.1 Overview
+Collably AI is a web-based platform that facilitates end-to-end influencer marketing campaigns. It provides tailored interfaces for two distinct user roles: **Businesses** (brands/agencies looking for promotion) and **Creators** (influencers seeking sponsorships). The application integrates modern UI/UX design with robust backend processing and AI capabilities.
+
+### 1.2 Motivation
+The creator economy is booming, but small to medium-sized businesses often lack the resources to identify the right influencers. Simultaneously, micro and mid-tier creators struggle to find legitimate brand deals outside of direct messages. The motivation behind PromoBridge is to democratize influencer marketing by providing an accessible, automated, and secure platform for both parties.
+
+### 1.3 Objectives
+- To develop a scalable, two-sided marketplace for brands and influencers.
+- To integrate Generative AI (Google Gemini) to assist businesses in drafting comprehensive campaign requirements.
+- To provide advanced discovery and filtering tools for finding suitable creators based on niche, location, and audience size.
+- To ensure data integrity and security through strict Role-Based Access Control (RBAC) and OAuth2 authentication.
+
+### 1.4 Existing System
+Currently, brands rely on fragmented systems:
+- Manual outreach via Instagram/Twitter DMs or emails.
+- Expensive, enterprise-only influencer platforms that isolate small businesses.
+- Manual drafting of campaign requirements and legal deliverables using Word or Google Docs.
+- Tracking applications and payments through disparate Excel spreadsheets.
+
+### 1.5 Proposed System
+PromoBridge replaces the existing fragmentation with a unified system:
+- **Centralized Hub:** A single platform for discovery, application, and management.
+- **AI-Assisted Workflows:** Automated generation of campaign titles, deliverables, and budgets.
+- **Role Isolation:** Strict separation of Business and Creator environments to ensure data privacy and focused user experiences.
+- **Real-Time Data:** Live database queries for creator metrics (followers, engagement) and campaign statuses.
+
+---
+
+## Chapter 2: Literature Review
+The shift towards influencer marketing over traditional advertising has been heavily documented. Platforms like Upfluence and Grin dominate the enterprise space but often feature steep learning curves and high costs. Recent studies indicate that AI integration in marketing platforms can reduce campaign setup time by over 40%. PromoBridge builds upon these findings by offering a lightweight, AI-first alternative tailored for rapid deployment and ease of use, utilizing the latest web technologies (React 19, Java 21) to ensure future-proof performance.
+
+---
+
+## Chapter 3: Problem Statement
+"How can we create a streamlined, secure, and intelligent platform that connects businesses with content creators, automates the campaign creation process, and manages the entire collaboration lifecycle without relying on fragmented, manual communication channels?"
+
+---
+
+## Chapter 4: System Requirements & Technologies
+
+### 4.1 Hardware Requirements
+- **Server:** Minimum 2 vCPUs, 4GB RAM (Cloud-hosted via Render/AWS).
+- **Database:** Managed PostgreSQL instance (Supabase).
+- **Client:** Modern web browser (Chrome, Safari, Firefox, Edge).
+
+### 4.2 Software & Technology Stack
+- **Frontend Core:** React 19, TypeScript, Vite
+- **Frontend UI/UX:** Tailwind CSS, Framer Motion, Lucide Icons
+- **Backend Core:** Java 21, Spring Boot 3.2.x
+- **Database & ORM:** PostgreSQL 16 (Supabase Session Pooler), Hibernate JPA, Flyway (Migrations)
+- **AI Integration:** Google Gemini API (Flash/Pro Models)
+- **Authentication:** Clerk (JWT OAuth2 Resource Server)
+- **Deployment:** Vercel (Frontend), Render (Backend), GitHub Actions (CI/CD)
+
+---
+
+## Chapter 5: Design & Architecture
+
+### 5.1 System Architecture
+PromoBridge employs a decoupled, RESTful microservice architecture. The React frontend communicates asynchronously with the Spring Boot backend via secure HTTP requests. Authentication is handled statelessly via Clerk JWTs.
+
+### 5.2 UML Diagrams
+
+#### 5.2.1 Use Case Diagram
 ```mermaid
-graph TD
-    User[End User Web Browser] -->|HTTPS| Vercel[Vercel Cloud - React 19 Client]
-    Vercel -->|REST API / JSON| Render[Render Container Host - Spring Boot API]
-    Vercel -->|OAuth2 Authentication| Clerk[Clerk Auth Management]
-    Render -->|JWT Verification| Clerk
-    Render -->|HikariCP / Session Pooler| DB[(Supabase PostgreSQL Database)]
-    Render -->|Generative AI Prompt Engine| Gemini[Google Gemini AI Service]
+usecaseDiagram
+    actor Business as "Business User"
+    actor Creator as "Creator User"
+    
+    package "Collably AI (PromoBridge)" {
+        usecase "Authenticate (Login/Signup)" as UC1
+        usecase "Select Permanent Role" as UC2
+        
+        usecase "Generate Campaign via AI" as UC3
+        usecase "Publish Campaign" as UC4
+        usecase "Discover Creators" as UC5
+        usecase "Manage Applications" as UC6
+        
+        usecase "Browse Sponsorships" as UC7
+        usecase "Submit Application" as UC8
+        usecase "Manage Creator Profile" as UC9
+    }
+    
+    Business --> UC1
+    Creator --> UC1
+    Business --> UC2
+    Creator --> UC2
+    
+    Business --> UC3
+    Business --> UC4
+    Business --> UC5
+    Business --> UC6
+    
+    Creator --> UC7
+    Creator --> UC8
+    Creator --> UC9
 ```
 
-### Key Design Principles:
-1. **Strict Role-Based Access Control (RBAC)**: Distinct permanent account types (**BUSINESS** vs **CREATOR**). One role's UI and capabilities are strictly isolated from the other.
-2. **100% Database Data Integrity**: All dashboard metrics, campaigns, proposals, and creator profiles are dynamically queried from live database tables (no static/mock fallback data).
-3. **Decoupled Security**: Authentication is managed via Clerk JWT tokens validated by Spring Security OAuth2 Resource Server.
+#### 5.2.2 Sequence Diagram: AI Campaign Generation
+```mermaid
+sequenceDiagram
+    participant User as Business User
+    participant UI as React Frontend
+    participant API as Spring Boot API
+    participant AI as Google Gemini API
+    
+    User->>UI: Enter prompt & click "Generate via AI"
+    UI->>API: POST /api/campaigns/generate (Prompt, JWT)
+    API->>API: Validate Token & Role (BUSINESS)
+    API->>AI: Send prompt payload
+    AI-->>API: Return structured JSON (Title, Desc, Deliverables)
+    API-->>UI: 200 OK (JSON Response)
+    UI-->>User: Populate form fields automatically
+```
 
----
-
-## 🗄 Database Schema & Data Model
-
-The PostgreSQL database schema consists of **9 core relational tables** managed via Flyway schema migrations (`db/migration/V1__Init_Schema.sql`, `V2__Add_proposal_column.sql`).
-
+#### 5.2.3 Entity Relationship (ER) Diagram
 ```mermaid
 erDiagram
-    USERS ||--o| BUSINESS_PROFILES : owns
-    USERS ||--o| CREATOR_PROFILES : owns
-    BUSINESS_PROFILES ||--o{ CAMPAIGNS : creates
-    CAMPAIGNS ||--o{ CAMPAIGN_APPLICATIONS : receives
-    CREATOR_PROFILES ||--o{ CAMPAIGN_APPLICATIONS : submits
-    USERS ||--o{ CONVERSATIONS : participates
-    CONVERSATIONS ||--o{ MESSAGES : contains
+    USERS {
+        uuid id PK
+        string email
+        string role "BUSINESS or CREATOR"
+    }
+    BUSINESS_PROFILES {
+        uuid id PK
+        uuid user_id FK
+        string business_name
+        string category
+    }
+    CREATOR_PROFILES {
+        uuid id PK
+        uuid user_id FK
+        string name
+        int followers
+        string category
+    }
+    CAMPAIGNS {
+        uuid id PK
+        uuid business_id FK
+        string title
+        string status
+        numeric budget
+    }
+    APPLICATIONS {
+        uuid id PK
+        uuid campaign_id FK
+        uuid creator_id FK
+        string status
+        text cover_letter
+    }
+    
+    USERS ||--o| BUSINESS_PROFILES : "has"
+    USERS ||--o| CREATOR_PROFILES : "has"
+    BUSINESS_PROFILES ||--o{ CAMPAIGNS : "creates"
+    CAMPAIGNS ||--o{ APPLICATIONS : "receives"
+    CREATOR_PROFILES ||--o{ APPLICATIONS : "submits"
 ```
 
-### Table Definitions:
+---
 
-| Table | Primary Key | Key Attributes | Description |
-| :--- | :--- | :--- | :--- |
-| `users` | `id` (Clerk ID) | `email`, `role` (`BUSINESS`/`CREATOR`), `created_at` | Global user identity repository |
-| `business_profiles` | `id` (UUID) | `user_id`, `business_name`, `category`, `location`, `description` | Business account details |
-| `creator_profiles` | `id` (UUID) | `user_id`, `name`, `bio`, `instagram_username`, `followers`, `location`, `average_rating`, `profile_image_url` | Content creator portfolio details |
-| `campaigns` | `id` (UUID) | `business_id`, `title`, `description`, `creator_category`, `budget`, `status` (`DRAFT`/`ACTIVE`/`COMPLETED`) | Sponsorship campaign briefs |
-| `campaign_applications` | `id` (UUID) | `campaign_id`, `creator_id`, `proposed_rate`, `proposal`, `status` (`APPLIED`/`ACCEPTED`/`REJECTED`) | Creator campaign applications |
-| `conversations` | `id` (UUID) | `business_user_id`, `creator_user_id` | Direct messaging threads |
-| `messages` | `id` (UUID) | `conversation_id`, `sender_id`, `content`, `sent_at` | Real-time chat messages |
-| `reviews` | `id` (UUID) | `business_id`, `creator_id`, `rating`, `comment` | Post-collaboration ratings |
-| `notifications` | `id` (UUID) | `user_id`, `title`, `message`, `is_read` | User event notifications |
+## Chapter 6: Implementation
+
+### 6.1 Backend Implementation
+- **RESTful Endpoints:** Controllers mapped to `/api/public`, `/api/discovery`, and protected routes `/api/campaigns`, `/api/applications`.
+- **Security Configuration:** `SecurityConfig.java` enforces JWT validation using Spring Security OAuth2. Public discovery routes are permitted, while state-mutating endpoints require valid Bearer tokens.
+- **AI Service:** The `GeminiAIService` constructs prompts and parses JSON responses from Google's LLM, converting natural language into structured `CampaignDTO` objects.
+
+### 6.2 Frontend Implementation
+- **Dynamic Routing:** `react-router-dom` manages navigation. A global `DashboardLayout` dynamically adjusts navigation links based on the user's permanent role (`businessNav` vs `creatorNav`).
+- **State Management:** React Hooks (`useState`, `useEffect`) manage local component state, while Context/LocalStorage caches the user's role to prevent UI flickering.
+- **API Client:** An Axios instance intercepts outgoing requests to automatically append the Clerk JWT `Authorization` header.
 
 ---
 
-## 🔒 Security & Access Control
+## Chapter 7: Software Testing
 
-### 1. Permanent Account Role Assignment
-When a user registers or logs in for the first time:
-- The **`RoleSelectionModal`** component prompts the user to select either a **Business Account** or **Creator Account**.
-- The selected role is saved into Clerk `user.unsafeMetadata.role` and `localStorage`.
-- Role assignment is **permanent**; role switching is strictly disabled.
+### 7.1 Unit Testing
+- **Backend:** JUnit 5 and Mockito are used to test business logic within Services, mocking repository responses to ensure data manipulation is accurate without database dependency.
+- **Frontend:** TypeScript provides static type checking (`npx tsc -b`) to ensure DTO interfaces match backend responses perfectly, eliminating runtime type errors.
 
-### 2. Role Permissions Matrix
+### 7.2 Integration Testing
+- Tested the end-to-end flow of Campaign Creation -> Database Persistence -> API Retrieval -> UI Display.
+- Verified that CORS policies allow the Vercel frontend to communicate seamlessly with the Render backend.
 
-| Feature / Action | Business Account | Creator Account |
-| :--- | :---: | :---: |
-| **View Business Suite Dashboard** | ✅ | ❌ (Access Denied) |
-| **View Creator Suite Dashboard** | ❌ (Access Denied) | ✅ |
-| **Create New Campaign (`/dashboard/campaigns/new`)** | ✅ | ❌ (Strict Route Guard) |
-| **Discover & Search 100+ Creators** | ✅ | ❌ |
-| **Browse Sponsorship Opportunities** | ❌ | ✅ |
-| **Submit Proposals / Applications** | ❌ | ✅ |
-| **View Campaign Analytics & Budget** | ✅ | ✅ (Earnings view) |
+### 7.3 Security Testing
+- Verified RBAC: Attempting to access `/api/campaigns` via POST with a `CREATOR` role JWT successfully returns `403 Forbidden`.
+- Verified Route Guards: Frontend automatically redirects Creators attempting to load `/dashboard/campaigns/new`.
 
 ---
 
-## 🌐 API Specifications & Endpoints Directory
-
-The backend exposes RESTful endpoints secured by Spring Security.
-
-### Public & Discovery Endpoints (No JWT required for browsing)
-- `GET /api/public/health`: System operational status check.
-- `GET /api/public/creators` / `GET /api/discovery/creators`: Paginated list of creator profiles (`size=12`).
-- `GET /api/public/campaigns` / `GET /api/discovery/campaigns`: Paginated list of active campaigns (`size=12`).
-
-### Business & Creator Secured Endpoints (Requires `Authorization: Bearer <JWT>`)
-- `POST /api/campaigns`: Create a new campaign (Business role required).
-- `GET /api/campaigns/{id}`: Retrieve full campaign details.
-- `POST /api/applications`: Submit a campaign proposal (Creator role required).
-- `GET /api/applications`: Retrieve user-specific campaign applications.
-- `GET /api/analytics`: Retrieve aggregate campaign and revenue metrics.
-- `POST /api/ai/generate-campaign`: Invoke Google Gemini AI to auto-generate a campaign brief.
+## Chapter 8: Results
+The deployed application successfully meets all objectives:
+- **Zero-Friction Onboarding:** Users seamlessly authenticate via Clerk and permanently select their workspace.
+- **High-Performance UI:** React 19 and Vite deliver near-instant page transitions, complemented by Framer Motion micro-animations.
+- **Data Integrity:** The Supabase PostgreSQL database accurately stores and serves 100+ seeded creator profiles and active campaigns through efficient Pageable API queries.
+- **Successful AI Integration:** The Gemini AI module reliably interprets vague user prompts (e.g., "Need a tech influencer for a 3-day gadget launch") into formal, structured campaign briefs.
 
 ---
 
-## 🤖 AI Integration Subsystem
+## Chapter 9: Conclusion & Future Enhancements
 
-Collably AI leverages the **Google Gemini REST API** (`gemini-1.5-flash` / `gemini-1.5-pro`) to assist business owners in generating high-converting campaign briefs.
+### 9.1 Conclusion
+Collably AI (PromoBridge) represents a modernized approach to influencer marketing. By combining an intuitive, role-isolated user interface with a robust, secure Spring Boot backend and cutting-edge Generative AI, the platform successfully solves the problem of fragmentation in the creator economy. It empowers businesses to launch campaigns faster and creators to find legitimate work safely.
 
-```text
-User Input -> Prompt Engine (AIPromptTemplates.java) -> Gemini RestTemplate -> JSON Response -> Auto-filled Campaign Form
-```
-
-### Capabilities:
-- **Campaign Brief Auto-Generation**: Generates campaign descriptions, deliverable checklists, and estimated budget ranges based on business category and goals.
-- **Match Score Engine**: Calculates percentage match scores between creator audience demographics and business target markets.
+### 9.2 Future Enhancements
+- **Payment Gateway Integration:** Integrate Stripe to handle escrow payments between businesses and creators directly on the platform.
+- **In-App Messaging & Contracts:** Implement WebSockets for real-time chat and digital signature capabilities for campaign contracts.
+- **Advanced Analytics Dashboard:** Incorporate real-time social media API webhooks to track actual post engagement (likes, views) automatically once a campaign is live.
 
 ---
 
-## 📊 Automated Database Seeding
-
-The application includes an automated database seeder (`generate_seed_data.js` & `run_seed.js`) that resets old records and populates **100 realistic creator accounts** into Supabase PostgreSQL.
-
-```bash
-# Execute Database Reset & 100 Creator Seeding
-node generate_seed_data.js
-node run_seed.js
-```
-
-Seeded attributes include:
-- Unsplash high-res profile avatars
-- Real-world locations (Mumbai, Bangalore, San Francisco, London, Dubai, etc.)
-- Follower counts (8,000 to 750,000+)
-- Average star ratings (4.2 ⭐ – 5.0 ⭐)
-- Instagram handles (`@creator_name`)
-
----
-
-## 🚀 DevOps, Deployment & CI/CD
-
-### Pipeline Architecture
-
-```text
-Git Commit -> GitHub Actions CI (.github/workflows/ci.yml) -> Vercel Deployment (Frontend) & Render Docker Build (Backend)
-```
-
-1. **Frontend Hosting (Vercel)**:
-   - **Live URL**: [https://promo-bridge-three.vercel.app](https://promo-bridge-three.vercel.app)
-   - Built with `npm run build` (Vite SPA).
-   - Configured with `vercel.json` rewrite rules to prevent 404s on React Router paths.
-
-2. **Backend Hosting (Render)**:
-   - **Live URL**: [https://promobridge-api.onrender.com](https://promobridge-api.onrender.com)
-   - Multi-stage Docker container (`Eclipse Temurin JDK 21`).
-   - Dynamic `$PORT` binding.
-
-3. **Database Hosting (Supabase PostgreSQL)**:
-   - Transaction & Session Pooler (`aws-0-ap-southeast-2.pooler.supabase.com:5432`).
-   - HikariCP connection pool with `sslmode=require`.
-
----
-
-## 🛠 Troubleshooting & Maintenance
-
-| Symptom | Cause | Solution |
-| :--- | :--- | :--- |
-| `java.net.SocketException: Network unreachable` | Direct DB connection string uses IPv6 | Use Supabase Session Pooler URL on port `5432` / `6543`. |
-| `No static resource api/public/creators` | Endpoint mapping missing in Spring Controller | Verify `@RequestMapping({"/api/discovery", "/api/public"})`. |
-| `TypeScript Error TS6133` | Unused import in React component | Run `npx tsc -b` locally before pushing code. |
-| Creator cards show 0 items | API returned Spring Data Pageable object | Parse `json.data.content` array instead of raw `json.data`. |
-
----
-
-<div align="center">
-  <sub>Documented according to IEEE/ISO Industry Software Engineering Standards.</sub>
-</div>
+## Chapter 10: Bibliography
+1. Spring Boot Documentation. (n.d.). Retrieved from https://spring.io/projects/spring-boot
+2. React - A JavaScript library for building user interfaces. (n.d.). Retrieved from https://react.dev/
+3. PostgreSQL: The World's Most Advanced Open Source Relational Database. (n.d.). Retrieved from https://www.postgresql.org/
+4. Google Gemini API Documentation. (n.d.). Retrieved from https://ai.google.dev/
+5. Clerk Authentication. (n.d.). Retrieved from https://clerk.com/docs
+6. Tailwind CSS Framework. (n.d.). Retrieved from https://tailwindcss.com/
