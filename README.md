@@ -6,68 +6,83 @@
 
   **AI-Powered Influencer Collaboration Marketplace**
 
+  [![Live App](https://img.shields.io/badge/Live_App-Vercel-000000?style=flat-square&logo=vercel&logoColor=white)](https://promo-bridge-three.vercel.app)
+  [![Backend API](https://img.shields.io/badge/Backend_API-Render-46E3B7?style=flat-square&logo=render&logoColor=white)](https://promobridge-api.onrender.com/api/public/health)
+  [![Database](https://img.shields.io/badge/Database-Supabase_PostgreSQL-3ECF8E?style=flat-square&logo=supabase&logoColor=white)](https://supabase.com)
   [![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.2+-6DB33F?style=flat-square&logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
-  [![Java](https://img.shields.io/badge/Java-21-ED8B00?style=flat-square&logo=openjdk&logoColor=white)](https://www.oracle.com/java/)
   [![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev/)
   [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-  [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?style=flat-square&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
-  [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
   [![License](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](LICENSE)
 
-  *Helping local businesses find the right content creators and empowering creators to discover genuine sponsorship opportunities.*
+  *Connecting local businesses with content creators for high-ROI influencer marketing and genuine sponsorship opportunities.*
 
-  [Key Features](#-key-features) • [Architecture](#-architecture) • [Getting Started](#-getting-started) • [Database Seeding](#-database-seeding) • [API Documentation](#-api-documentation) • [Deployment](#-deployment)
+  [Live Demo](#-live-demo) • [Key Features](#-key-features) • [Architecture](#-architecture) • [Strict Role Security](#-strict-role-security) • [Getting Started](#-getting-started) • [Database Seeding](#-database-seeding) • [CI/CD & Deployment](#-cicd--deployment)
 
 </div>
 
 ---
 
+## 🌐 Live Demo
+
+- 🖥️ **Frontend Client (Vercel)**: [https://promo-bridge-three.vercel.app](https://promo-bridge-three.vercel.app)
+- ⚙️ **Backend REST API (Render)**: [https://promobridge-api.onrender.com](https://promobridge-api.onrender.com)
+- 🟢 **API Health Endpoint**: [https://promobridge-api.onrender.com/api/public/health](https://promobridge-api.onrender.com/api/public/health)
+- 🗄️ **Managed Database**: Supabase PostgreSQL (Session Pooler)
+
+---
+
 ## 📌 Executive Summary
 
-**Collably AI** (PromoBridge) is a production-ready, full-stack two-sided marketplace designed for seamless business-creator collaborations. Built using Spring Boot 3, React 19, PostgreSQL, and Google Gemini AI, it eliminates friction in influencer marketing by offering automated AI campaign generation, intelligent creator matching, dynamic analytics, and end-to-end campaign tracking.
+**Collably AI** (PromoBridge) is a full-stack, enterprise-grade two-sided marketplace for influencer marketing. Built with **Spring Boot 3**, **React 19**, **PostgreSQL**, and **Google Gemini AI**, it simplifies brand collaborations by providing automated campaign generation, intelligent creator matching, dynamic analytics, and end-to-end deal tracking.
 
 ---
 
 ## ✨ Key Features
 
-### 🏢 For Businesses
-- **AI Campaign Generator**: Generate structured, high-converting campaign proposals, deliverables, and budgets using natural language prompts.
-- **Creator Discovery & Smart Matching**: Search 100+ vetted creator profiles with filterable criteria (niche, location, follower count, engagement score).
-- **Application Management**: Review incoming creator applications, accept/reject proposals, and track deliverables in real-time.
-- **Performance Analytics**: Gain insights into ROI, total reach, active campaigns, and engagement metrics.
+### 🏢 For Business Owners
+- **AI Campaign Generator**: Generate structured campaign briefs, deliverables, and budgets using natural language prompts.
+- **Creator Discovery**: Search **100+ live database-seeded creator profiles** with filters for niche, followers, rating, and location.
+- **Strict Campaign Management**: Create, edit, and track active campaign applications and proposed rates.
+- **ROI Analytics**: Monitor campaign reach, applications count, and allocated budgets in real time.
 
-### 🎨 For Content Creators (Influencers)
-- **Sponsorship Feed**: Discover genuine, verified campaign opportunities tailored to your niche and audience size.
-- **1-Click Application**: Submit customizable proposals and proposed rates directly to business owners.
-- **Creator Profile & Portfolio**: Showcase past collaborations, audience demographics, and social stats (Instagram, YouTube).
-- **Direct Messaging**: Communicate directly with brand managers for smooth execution.
+### 🎨 For Content Creators
+- **Sponsorship Feed**: Browse live brand campaigns filtered by category and budget.
+- **Proposal Submission**: Submit tailored proposals directly to brand managers.
+- **Portfolio Showcase**: Highlight social handles (Instagram, YouTube), follower counts, and engagement stats.
+- **Application Tracking**: Track status updates (*Applied*, *Shortlisted*, *Accepted*, *Completed*).
 
 ---
 
-## 🏗 Architecture
+## 🔒 Strict Role Security & Data Integrity
 
-Collably AI adopts a decoupled, microservice-ready architecture ensuring high availability, security, and low latency.
+- **Permanent Role Assignment**: Upon signup/onboarding, users choose between a **Business Account** or **Creator Account**. Roles are permanently saved with strict role-based access control (RBAC).
+- **Campaign Creation Lock**: Only authenticated Business Accounts can create campaigns. Creators attempting to access campaign creation routes are automatically blocked.
+- **100% Database-Driven UI**: All metrics, campaign cards, creator profiles, and analytics are dynamically queried from Supabase PostgreSQL (no hardcoded fallback data).
+
+---
+
+## 🏗 System Architecture
 
 ```mermaid
 graph TD
-    Client[React 19 Frontend + Vite] -->|HTTPS / REST API| API[Spring Boot 3 API Service]
-    Client -->|OAuth2 Authentication| Auth[Clerk Auth Provider]
-    API -->|JWT Validation| Auth
-    API -->|JPA / Flyway| DB[(PostgreSQL Database)]
-    API -->|Generative AI Requests| Gemini[Google Gemini AI API]
+    User[User Client] -->|HTTPS / REST API| Vercel[Vercel Frontend - React 19]
+    Vercel -->|CORS / REST API| Render[Render Backend - Spring Boot 3]
+    Vercel -->|JWT Authentication| Clerk[Clerk Auth Provider]
+    Render -->|OAuth2 JWT Validation| Clerk
+    Render -->|HikariCP / Session Pooler| DB[(Supabase PostgreSQL)]
+    Render -->|Generative AI Requests| Gemini[Google Gemini AI]
 ```
 
 ### Tech Stack
 
-| Domain | Technology | Details |
+| Component | Technology | Description |
 | :--- | :--- | :--- |
-| **Frontend Core** | React 19, TypeScript, Vite | Ultra-fast SPA development & strict type safety |
-| **Frontend UI/UX** | Tailwind CSS, Framer Motion, Lucide Icons | Glassmorphic design system & dynamic micro-interactions |
-| **Backend Core** | Java 21, Spring Boot 3.2.x | Enterprise RESTful Web API service |
-| **Database & ORM** | PostgreSQL 16, Hibernate JPA, Flyway | Versioned database schema & relational data mapping |
-| **AI Subsystem** | Google Gemini API (Gemini Flash/Pro) | AI proposal generation, content scoring & matchmaking |
-| **Authentication** | Clerk (JWT OAuth2 Resource Server) | Role-based authorization (`BUSINESS`, `CREATOR`) |
-| **API Spec & Testing**| OpenAPI 3 / Swagger UI | Live interactive API documentation |
+| **Frontend** | React 19, TypeScript, Vite, Tailwind CSS | Ultra-fast SPA, type-safe components, Framer Motion animations |
+| **Backend** | Java 21, Spring Boot 3.2.x, Hibernate JPA | Microservice-ready REST API with MapStruct & Lombok |
+| **Database** | PostgreSQL 16 (Supabase Pooler), Flyway | Versioned migrations, connection pooling & transactional integrity |
+| **AI Subsystem** | Google Gemini API (Gemini Flash/Pro) | AI prompt engine for campaign brief generation |
+| **Security** | Spring Security + Clerk OAuth2 | Role-based endpoint authorization (`BUSINESS`, `CREATOR`) |
+| **CI/CD** | GitHub Actions & Vercel Auto-Deploy | Automated builds, TypeScript checks, and multi-region deployment |
 
 ---
 
@@ -75,33 +90,34 @@ graph TD
 
 ```text
 PromoBridge/
-├── backend/                             # Spring Boot 3 Application
+├── backend/                             # Spring Boot 3 API Service
+│   ├── Dockerfile                       # Multi-stage production Docker container
 │   ├── src/main/java/com/promobridge/api/
-│   │   ├── config/                      # Web & CORS Security Configurations
-│   │   ├── controller/                  # REST Controllers (Campaign, Creator, Business, Health)
-│   │   ├── dto/                         # Request & Response DTOs
-│   │   ├── entity/                      # JPA Entities (User, BusinessProfile, CreatorProfile, etc.)
-│   │   ├── exception/                   # Centralized Global Exception Handler
+│   │   ├── config/                      # CORS, AI & Swagger Configurations
+│   │   ├── controller/                  # REST Controllers (Campaign, Discovery, Health)
+│   │   ├── dto/                         # Data Transfer Objects
+│   │   ├── entity/                      # JPA Entities (User, BusinessProfile, CreatorProfile, Campaign)
 │   │   ├── mapper/                      # MapStruct DTO-Entity Mappers
 │   │   ├── repository/                  # Spring Data Repositories
 │   │   ├── security/                    # Clerk OAuth2 Security Config & JWT Decoders
-│   │   └── service/                     # Core Business Logic & AI Integration
+│   │   └── service/                     # Core Business Logic & Gemini AI Service
 │   └── src/main/resources/
 │       ├── application.yml              # Central Spring Configuration
-│       └── db/migration/                # Flyway DB Schema Migration Scripts
+│       └── db/migration/                # Flyway Database Migration Scripts
 │
-├── frontend/                            # React 19 + Vite Frontend Application
+├── frontend/                            # React 19 + Vite Web Application
+│   ├── vercel.json                      # Single-Page Application (SPA) Routing Config
 │   └── src/
-│       ├── api/                         # Axios HTTP Client & Interceptors
-│       ├── components/                  # UI Components (Navbar, Cards, Modals, Badges)
-│       ├── layouts/                     # Dashboard & Public Navigation Layouts
-│       ├── pages/                       # App Pages (Dashboard, Campaigns, Details, Discovery)
+│       ├── api/                         # Axios API Client & Dynamic Base URL handler
+│       ├── components/                  # RoleSelectionModal, Navbars, Stat Cards
+│       ├── layouts/                     # DashboardLayout & Role Navigation
+│       ├── pages/                       # Business Dashboard, Creator Dashboard, Discovery, Analytics
 │       ├── types/                       # Shared TypeScript Interfaces
-│       └── App.tsx                      # Main Application Router
+│       └── App.tsx                      # Main Application Router & Role Guards
 │
-├── generate_seed_data.js                # Dummy Data SQL Generator Script
-├── run_seed.js                          # PostgreSQL Automatic Seeder Tool
-└── README.md                            # Comprehensive Documentation
+├── generate_seed_data.js                # Database Reset & 100 Creator Seeder Script
+├── run_seed.js                          # Supabase PostgreSQL Automated Seeder Runner
+└── README.md                            # Complete Technical Documentation
 ```
 
 ---
@@ -109,34 +125,25 @@ PromoBridge/
 ## 🚀 Getting Started
 
 ### Prerequisites
-
-Ensure you have the following installed locally:
-- **Node.js**: `v18.x` or higher
+- **Node.js**: `v20.x` or higher
 - **Java OpenJDK**: `v21` or higher
 - **Maven**: `v3.9` or higher
-- **PostgreSQL**: `v15` or higher (or a cloud provider like Supabase/Neon)
+- **PostgreSQL**: `v16` (or Supabase account)
 
 ---
 
-### 1. Environment Setup
+### 1. Local Environment Setup
 
-#### Backend Configuration (`backend/.env`)
-Create a `.env` file inside the `backend/` directory:
-
+#### Backend Environment (`backend/.env`)
 ```env
-# Database Credentials
-DB_URL=jdbc:postgresql://localhost:5432/postgres
-DB_USERNAME=postgres
-DB_PASSWORD=your_password
-
-# Authentication & AI
+DB_URL=jdbc:postgresql://aws-0-ap-southeast-2.pooler.supabase.com:5432/postgres?sslmode=require
+DB_USERNAME=postgres.mgfceklgiunrgxwssmuu
+DB_PASSWORD=your_database_password
 CLERK_ISSUER_URI=https://<your-clerk-domain>.clerk.accounts.dev
-GEMINI_API_KEY=your_google_gemini_api_key
+GEMINI_API_KEY=your_gemini_api_key
 ```
 
-#### Frontend Configuration (`frontend/.env`)
-Create a `.env` file inside the `frontend/` directory:
-
+#### Frontend Environment (`frontend/.env`)
 ```env
 VITE_CLERK_PUBLISHABLE_KEY=pk_test_...
 VITE_API_URL=http://localhost:8080/api
@@ -144,93 +151,49 @@ VITE_API_URL=http://localhost:8080/api
 
 ---
 
-### 2. Running the Backend Server
+### 2. Running Locally
 
 ```bash
+# 1. Start Backend (Terminal 1)
 cd backend
-
-# Compile project dependencies
-./mvnw clean compile
-
-# Start Spring Boot Server
 ./mvnw spring-boot:run
-```
-The API server will launch at `http://localhost:8080`.
-Verify health status at: `http://localhost:8080/api/public/health`
 
----
-
-### 3. Running the Frontend Application
-
-```bash
+# 2. Start Frontend (Terminal 2)
 cd frontend
-
-# Install Node modules
 npm install
-
-# Start Vite development server
 npm run dev
 ```
-Access the web client at `http://localhost:5173`.
 
 ---
 
-## 📊 Database Seeding
+## 📊 Database Seeding (100 Creator Profiles)
 
-The repository includes an automated data generator that populates **100 Business Accounts** and **100 Creator Accounts** into your PostgreSQL database.
+To seed your Supabase database with **100 realistic creator profiles** (complete with avatars, bios, follower counts, categories, and Instagram handles) and **10 business campaigns**:
 
 ```bash
-# Generate seed SQL & insert 200 dummy profiles into PostgreSQL
+# Reset database and insert 100 creator profiles
 node generate_seed_data.js
 node run_seed.js
 ```
 
 ---
 
+## 🔄 CI/CD & Deployment
+
+- **GitHub Actions Workflow** (`.github/workflows/ci.yml`): Automatically compiles Java 21, builds Maven JARs, checks TypeScript types (`npx tsc -b`), and verifies builds on every `git push`.
+- **Frontend Deployment**: Automatically hosted on **Vercel** via GitHub integration.
+- **Backend Deployment**: Containerized with multi-stage Docker and deployed on **Render** with Supabase PostgreSQL connection pooling.
+
+---
+
 ## 📚 API Documentation
 
-Interactive OpenAPI 3.0 documentation is built directly into the Spring Boot backend.
-
-- **Swagger UI**: [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
-- **OpenAPI JSON**: `http://localhost:8080/v3/api-docs`
-
----
-
-## 🧪 Testing
-
-### Backend Unit & Integration Tests
-```bash
-cd backend
-./mvnw test
-```
-
-### Frontend Type Verification
-```bash
-cd frontend
-npx tsc --noEmit
-```
-
----
-
-## 🌐 Deployment Guide
-
-### Deploying Backend (Docker / Render / Railway)
-1. Build executable JAR:
-   ```bash
-   cd backend && ./mvnw clean package -DskipTests
-   ```
-2. Execute JAR file:
-   ```bash
-   java -jar target/api-0.0.1-SNAPSHOT.jar
-   ```
-
-### Deploying Frontend (Vercel / Netlify)
-1. Set Build Command: `npm run build`
-2. Set Output Directory: `dist`
-3. Configure environment variables (`VITE_CLERK_PUBLISHABLE_KEY`, `VITE_API_URL`).
+Interactive Swagger OpenAPI 3.0 specs:
+- **Swagger UI (Live)**: [https://promobridge-api.onrender.com/swagger-ui.html](https://promobridge-api.onrender.com/swagger-ui.html)
+- **Local Swagger UI**: `http://localhost:8080/swagger-ui.html`
 
 ---
 
 ## 📄 License
 
-This project is open source and available under the [MIT License](LICENSE).
+This project is licensed under the [MIT License](LICENSE).
