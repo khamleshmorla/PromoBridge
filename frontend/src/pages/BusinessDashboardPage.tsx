@@ -83,12 +83,14 @@ export default function BusinessDashboardPage() {
 
         if (cmpRes && cmpRes.ok) {
           const json = await cmpRes.json();
-          setCampaigns(json.data || json.content || json || []);
+          const list = Array.isArray(json.data) ? json.data : (json.data?.content || json.content || []);
+          setCampaigns(list);
         }
 
         if (creRes && creRes.ok) {
           const json = await creRes.json();
-          setCreators(json.data || json.content || json || []);
+          const list = Array.isArray(json.data) ? json.data : (json.data?.content || json.content || []);
+          setCreators(list);
         }
       } catch {
         // Handle network error quietly

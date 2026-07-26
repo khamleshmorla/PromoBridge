@@ -37,7 +37,8 @@ export default function CreatorDiscoveryPage() {
         const res = await fetch(`${API_BASE_URL}/discovery/creators`).catch(() => null);
         if (res && res.ok) {
           const json = await res.json();
-          setCreators(json.data || json.content || json || []);
+          const list = Array.isArray(json.data) ? json.data : (json.data?.content || json.content || []);
+          setCreators(list);
         }
       } catch {
         // Fallback quiet

@@ -50,7 +50,8 @@ export default function CreatorDashboardPage() {
         const res = await fetch(`${API_BASE_URL}/discovery/campaigns`).catch(() => null);
         if (res && res.ok) {
           const json = await res.json();
-          setCampaigns(json.data || json.content || json || []);
+          const list = Array.isArray(json.data) ? json.data : (json.data?.content || json.content || []);
+          setCampaigns(list);
         }
       } catch {
         // quiet fallback
