@@ -17,7 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping({"/api/discovery", "/api/public"})
+@RequestMapping("/api")
 @RequiredArgsConstructor
 public class DiscoveryController {
 
@@ -26,7 +26,7 @@ public class DiscoveryController {
     private final CampaignMapper campaignMapper;
     private final ProfileMapper profileMapper;
 
-    @GetMapping("/campaigns")
+    @GetMapping({"/discovery/campaigns", "/public/campaigns"})
     public ResponseEntity<ApiResponse<Page<CampaignDTO>>> discoverCampaigns(
             @PageableDefault(size = 12) Pageable pageable,
             HttpServletRequest request) {
@@ -35,7 +35,7 @@ public class DiscoveryController {
         return ResponseEntity.ok(ApiResponse.success(campaigns, "Campaigns discovered", request.getRequestURI()));
     }
 
-    @GetMapping("/creators")
+    @GetMapping({"/discovery/creators", "/public/creators"})
     public ResponseEntity<ApiResponse<Page<CreatorProfileDTO>>> discoverCreators(
             @PageableDefault(size = 12) Pageable pageable,
             HttpServletRequest request) {
