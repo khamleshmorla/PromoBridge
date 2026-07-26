@@ -1,0 +1,25 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:promobridge;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driverClassName: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+  flyway:
+    enabled: false # Use Hibernate DDL generation for tests to avoid complex H2/PostgreSQL dialect mismatches in Flyway scripts
+  
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: "http://localhost:8080/.well-known/jwks.json" # Mock for tests
+
+cloudinary:
+  url: "cloudinary://test:test@test"
