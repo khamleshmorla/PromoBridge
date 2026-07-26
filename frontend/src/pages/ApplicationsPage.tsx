@@ -4,6 +4,7 @@ import {
   Search, CheckCircle2, XCircle, Clock, Star, Sparkles
 } from 'lucide-react';
 import { Link, useOutletContext } from 'react-router-dom';
+import { API_BASE_URL } from '../api/client';
 
 type AppStatus = 'APPLIED' | 'SHORTLISTED' | 'ACCEPTED' | 'REJECTED' | 'COMPLETED';
 
@@ -37,7 +38,7 @@ export default function ApplicationsPage() {
   useEffect(() => {
     async function fetchApplications() {
       try {
-        const res = await fetch('http://localhost:8080/api/applications').catch(() => null);
+        const res = await fetch(`${API_BASE_URL}/applications`).catch(() => null);
         if (res && res.ok) {
           const json = await res.json();
           setApplications(json.data || json.content || json || []);

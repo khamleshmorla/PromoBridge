@@ -6,6 +6,7 @@ import {
   Rocket
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { API_BASE_URL } from '../api/client';
 
 // Stat Card
 function StatCard({ icon: Icon, label, value, trend, trendUp, gradient, to }: {
@@ -76,8 +77,8 @@ export default function BusinessDashboardPage() {
     async function fetchData() {
       try {
         const [cmpRes, creRes] = await Promise.all([
-          fetch('http://localhost:8080/api/public/campaigns').catch(() => null),
-          fetch('http://localhost:8080/api/public/creators').catch(() => null)
+          fetch(`${API_BASE_URL}/public/campaigns`).catch(() => null),
+          fetch(`${API_BASE_URL}/public/creators`).catch(() => null)
         ]);
 
         if (cmpRes && cmpRes.ok) {

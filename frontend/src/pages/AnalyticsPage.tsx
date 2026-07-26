@@ -5,6 +5,7 @@ import {
   ArrowUpRight, Sparkles
 } from 'lucide-react';
 import { useOutletContext } from 'react-router-dom';
+import { API_BASE_URL } from '../api/client';
 
 interface CampaignItem {
   id: string;
@@ -26,7 +27,7 @@ export default function AnalyticsPage() {
   useEffect(() => {
     async function fetchAnalytics() {
       try {
-        const res = await fetch('http://localhost:8080/api/public/campaigns').catch(() => null);
+        const res = await fetch(`${API_BASE_URL}/public/campaigns`).catch(() => null);
         if (res && res.ok) {
           const json = await res.json();
           setCampaigns(json.data || json.content || json || []);

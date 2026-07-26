@@ -4,6 +4,7 @@ import {
   Search, MapPin, Users as UsersIcon, Shield, Sparkles, MessageSquare
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { API_BASE_URL } from '../api/client';
 
 interface CreatorItem {
   id: string;
@@ -33,7 +34,7 @@ export default function CreatorDiscoveryPage() {
   useEffect(() => {
     async function fetchCreators() {
       try {
-        const res = await fetch('http://localhost:8080/api/public/creators').catch(() => null);
+        const res = await fetch(`${API_BASE_URL}/public/creators`).catch(() => null);
         if (res && res.ok) {
           const json = await res.json();
           setCreators(json.data || json.content || json || []);

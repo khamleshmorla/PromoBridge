@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+export const API_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8080/api').replace(/\/$/, '');
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -12,8 +12,6 @@ const apiClient = axios.create({
 // Request interceptor: attach Clerk JWT token
 apiClient.interceptors.request.use(
   async (config) => {
-    // Token will be injected by the ClerkProvider's getToken
-    // We store it in localStorage after login for convenience
     const token = localStorage.getItem('pb_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;

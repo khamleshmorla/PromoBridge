@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useOutletContext } from 'react-router-dom';
+import { API_BASE_URL } from '../api/client';
 import { motion } from 'framer-motion';
 import {
   Plus, Search, Eye, Calendar, MapPin, IndianRupee, Sparkles
@@ -40,7 +41,7 @@ export default function CampaignListPage() {
   useEffect(() => {
     async function fetchCampaigns() {
       try {
-        const res = await fetch('http://localhost:8080/api/public/campaigns').catch(() => null);
+        const res = await fetch(`${API_BASE_URL}/public/campaigns`).catch(() => null);
         if (res && res.ok) {
           const json = await res.json();
           setCampaigns(json.data || json.content || json || []);

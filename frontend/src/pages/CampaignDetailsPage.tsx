@@ -6,6 +6,7 @@ import {
   CheckCircle2, Clock, MapPin, Tag, Sparkles, Send, Share2, MoreHorizontal
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { API_BASE_URL } from '../api/client';
 
 interface CampaignDetail {
   id: string;
@@ -35,7 +36,7 @@ export default function CampaignDetailsPage() {
     // Fetch campaign details or fallback to mock data if ID is generated locally
     const fetchCampaign = async () => {
       try {
-        const response = await fetch(`http://localhost:8080/api/public/campaigns/${id}`).catch(() => null);
+        const response = await fetch(`${API_BASE_URL}/public/campaigns/${id}`).catch(() => null);
         if (response && response.ok) {
           const resData = await response.json();
           setCampaign(resData.data || resData);
