@@ -31,6 +31,6 @@ promobridge:
     url: ${CLOUDINARY_URL:}
 
 server:
-  port: 8080
+  port: ${PORT:8080}
   error:
     include-message: always
