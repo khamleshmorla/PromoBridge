@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
-  ArrowLeft, Megaphone, Calendar, DollarSign, Users, Eye,
+  ArrowLeft, Calendar, DollarSign, Users, Eye,
   CheckCircle2, Clock, MapPin, Tag, Sparkles, Send, Share2, MoreHorizontal
 } from 'lucide-react';
 import toast from 'react-hot-toast';
