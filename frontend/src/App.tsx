@@ -1,11 +1,11 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useOutletContext } from 'react-router-dom';
 import { SignedIn, SignedOut, SignIn, SignUp } from '@clerk/clerk-react';
 import { Toaster } from 'react-hot-toast';
 
 // Pages
 import LandingPage from './pages/LandingPage';
 import BusinessDashboardPage from './pages/BusinessDashboardPage';
-// import CreatorDashboardPage from './pages/CreatorDashboardPage';
+import CreatorDashboardPage from './pages/CreatorDashboardPage';
 import CampaignListPage from './pages/CampaignListPage';
 import CreateCampaignPage from './pages/CreateCampaignPage';
 import CampaignDetailsPage from './pages/CampaignDetailsPage';
@@ -18,6 +18,16 @@ import SettingsPage from './pages/SettingsPage';
 
 // Layouts
 import DashboardLayout from './layouts/DashboardLayout';
+
+function DashboardIndexRoute() {
+  const { role } = useOutletContext<{ role?: string }>() || {};
+  const currentRole = role || localStorage.getItem('promobridge_user_role');
+
+  if (currentRole === 'CREATOR') {
+    return <CreatorDashboardPage />;
+  }
+  return <BusinessDashboardPage />;
+}
 
 function App() {
   return (
@@ -56,7 +66,7 @@ function App() {
             <DashboardLayout />
           </SignedIn>
         }>
-          <Route index element={<BusinessDashboardPage />} />
+          <Route index element={<DashboardIndexRoute />} />
           <Route path="campaigns" element={<CampaignListPage />} />
           <Route path="campaigns/new" element={<CreateCampaignPage />} />
           <Route path="campaigns/:id" element={<CampaignDetailsPage />} />
