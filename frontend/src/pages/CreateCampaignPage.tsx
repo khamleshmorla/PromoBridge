@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useOutletContext } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import {
   Sparkles, ArrowRight, ArrowLeft, Type, FileText, IndianRupee,
   MapPin, Calendar, Users, CheckCircle2, Brain, Loader2
@@ -10,6 +11,15 @@ const steps = ['Basics', 'Details', 'Requirements', 'Review'];
 
 export default function CreateCampaignPage() {
   const navigate = useNavigate();
+  const { role } = useOutletContext<{ role?: string }>() || {};
+  const currentRole = role || localStorage.getItem('promobridge_user_role');
+
+  useEffect(() => {
+    if (currentRole === 'CREATOR') {
+      toast.error('Access Denied: Creator accounts cannot create campaigns.');
+      navigate('/dashboard');
+    }
+  }, [currentRole, navigate]);
   const [step, setStep] = useState(0);
   const [aiGenerating, setAiGenerating] = useState(false);
   const [form, setForm] = useState({

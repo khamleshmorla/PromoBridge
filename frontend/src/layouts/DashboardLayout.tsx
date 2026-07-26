@@ -127,16 +127,8 @@ export default function DashboardLayout() {
           })}
         </nav>
 
-        {/* Role Switcher / Collapse Button */}
-        <div className="p-3 border-t border-border/50 space-y-2">
-          {!collapsed && (
-            <button
-              onClick={() => setShowRoleModal(true)}
-              className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-lg w-full hover:bg-muted/40 transition-colors"
-            >
-              <UserCheck className="w-3.5 h-3.5" /> Switch Account Role ({role})
-            </button>
-          )}
+        {/* Collapse Button */}
+        <div className="p-3 border-t border-border/50">
           <button onClick={() => setCollapsed(!collapsed)}
             className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all w-full">
             <ChevronLeft className={`w-4 h-4 transition-transform ${collapsed ? 'rotate-180' : ''}`} />

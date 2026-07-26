@@ -48,7 +48,7 @@ export default function RoleSelectionModal({ onSelectRole }: RoleSelectionModalP
             <Sparkles className="w-6 h-6" />
           </div>
           <h2 className="text-2xl font-extrabold tracking-tight">Choose Your Account Type</h2>
-          <p className="text-sm text-muted-foreground">Select how you plan to use Collably AI (PromoBridge). Your dashboard will be customized accordingly.</p>
+          <p className="text-sm text-muted-foreground">Select your permanent account type. This determines your dashboard, permissions, and features.</p>
         </div>
 
         <div className="grid sm:grid-cols-2 gap-4">
