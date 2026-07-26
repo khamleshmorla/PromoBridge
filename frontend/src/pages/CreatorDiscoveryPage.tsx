@@ -2,9 +2,9 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search, MapPin, Users as UsersIcon, Sparkles, MessageSquare,
-  Star, X, SlidersHorizontal, ChevronDown
+  Star, X, SlidersHorizontal, ChevronDown, UserCircle
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 // ──────────────────────────────────────────────
 // Always use the live Render API — no env fallback
@@ -49,6 +49,7 @@ const CAT_KEYWORDS: Record<string, string[]> = {
 };
 
 export default function CreatorDiscoveryPage() {
+  const navigate = useNavigate();
   const [allCreators, setAllCreators] = useState<CreatorItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -68,7 +69,10 @@ export default function CreatorDiscoveryPage() {
         const res = await fetch(`${BASE}/discovery/creators?page=0&size=100`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const json = await res.json();
-        const list: CreatorItem[] = json?.data?.content ?? json?.content ?? [];
+        const raw: CreatorItem[] = json?.data?.content ?? json?.content ?? [];
+        // Deduplicate by id
+        const seen = new Set<string>();
+        const list = raw.filter((c) => { if (seen.has(c.id)) return false; seen.add(c.id); return true; });
         setAllCreators(list);
       } catch (e) {
         setError('Could not load creators. Please try again.');
@@ -317,11 +321,19 @@ export default function CreatorDiscoveryPage() {
                 </span>
               )}
 
-              {/* CTA */}
-              <Link to="/dashboard/messages"
-                className="w-full py-2.5 rounded-xl bg-primary/10 text-primary text-xs font-bold hover:bg-primary hover:text-primary-foreground transition-all flex items-center justify-center gap-1.5 group-hover:shadow-sm">
-                <MessageSquare className="w-3.5 h-3.5" /> Contact Creator
-              </Link>
+              {/* CTAs */}
+              <div className="grid grid-cols-2 gap-2">
+                <Link
+                  to={`/dashboard/creators/${c.id}`}
+                  className="py-2 rounded-xl bg-muted/70 text-foreground text-xs font-semibold hover:bg-muted transition-all flex items-center justify-center gap-1.5">
+                  <UserCircle className="w-3.5 h-3.5" /> View Profile
+                </Link>
+                <button
+                  onClick={() => navigate(`/dashboard/messages?creatorId=${c.id}&creatorName=${encodeURIComponent(c.name)}`)}
+                  className="py-2 rounded-xl bg-primary/10 text-primary text-xs font-semibold hover:bg-primary hover:text-primary-foreground transition-all flex items-center justify-center gap-1.5">
+                  <MessageSquare className="w-3.5 h-3.5" /> Message
+                </button>
+              </div>
             </motion.div>
           ))}
         </div>

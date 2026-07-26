@@ -89,12 +89,16 @@ export default function BusinessDashboardPage() {
 
         if (cmpRes && cmpRes.ok) {
           const json = await cmpRes.json();
-          setCampaigns(json?.data?.content ?? json?.content ?? []);
+          const raw = json?.data?.content ?? json?.content ?? [];
+          const seen = new Set<string>();
+          setCampaigns(raw.filter((c: CampaignItem) => { if (seen.has(c.id)) return false; seen.add(c.id); return true; }));
         }
 
         if (creRes && creRes.ok) {
           const json = await creRes.json();
-          setCreators(json?.data?.content ?? json?.content ?? []);
+          const raw = json?.data?.content ?? json?.content ?? [];
+          const seen = new Set<string>();
+          setCreators(raw.filter((c: CreatorItem) => { if (seen.has(c.id)) return false; seen.add(c.id); return true; }));
         }
       } finally {
         setLoading(false);
@@ -226,7 +230,7 @@ export default function BusinessDashboardPage() {
             ) : (
               <div className="space-y-3">
                 {creators.slice(0, 5).map((c) => (
-                  <Link key={c.id} to="/dashboard/creators"
+                  <Link key={c.id} to={`/dashboard/creators/${c.id}`}
                     className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-muted/40 transition-colors group">
                     {c.profileImageUrl ? (
                       <img src={c.profileImageUrl} alt={c.name}

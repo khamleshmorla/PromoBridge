@@ -15,6 +15,7 @@ import MessagesPage from './pages/MessagesPage';
 import NotificationsPage from './pages/NotificationsPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import SettingsPage from './pages/SettingsPage';
+import CreatorProfilePage from './pages/CreatorProfilePage';
 
 // Layouts
 import DashboardLayout from './layouts/DashboardLayout';
@@ -71,6 +72,7 @@ function App() {
           <Route path="campaigns/new" element={<CreateCampaignPage />} />
           <Route path="campaigns/:id" element={<CampaignDetailsPage />} />
           <Route path="creators" element={<CreatorDiscoveryPage />} />
+          <Route path="creators/:id" element={<CreatorProfilePage />} />
           <Route path="applications" element={<ApplicationsPage />} />
           <Route path="messages" element={<MessagesPage />} />
           <Route path="bookmarks" element={<div className="text-2xl font-bold">Bookmarks</div>} />

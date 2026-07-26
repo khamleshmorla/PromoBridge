@@ -1,160 +1,312 @@
-import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useUser } from '@clerk/clerk-react';
 import {
-  Send, Image, Smile, Paperclip, Search, Phone, Video, MoreVertical,
-  ArrowLeft, CheckCheck, Circle
+  Send, Search, ArrowLeft, MoreVertical,
+  CheckCheck, MessageSquare, Users
 } from 'lucide-react';
 
-interface ChatContact {
+// ── Types ────────────────────────────────────────────────────────
+interface Conversation {
   id: string;
-  name: string;
-  lastMessage: string;
-  time: string;
-  unread: number;
-  online: boolean;
-  avatar: string;
+  otherPartyName: string;
+  otherPartyAvatar?: string;
+  lastMessage?: string;
+  lastMessageAt?: string;
+  unreadCount?: number;
 }
 
-const mockContacts: ChatContact[] = [
-  { id: '1', name: 'Ananya Verma', lastMessage: 'Sounds great! Let me share my portfolio.', time: '2 min', unread: 2, online: true, avatar: 'A' },
-  { id: '2', name: 'Karthik Rajan', lastMessage: 'When do you need the deliverables?', time: '1 hr', unread: 0, online: true, avatar: 'K' },
-  { id: '3', name: 'Divya Singh', lastMessage: 'I\'ll send the reel draft by tomorrow', time: '3 hr', unread: 0, online: false, avatar: 'D' },
-  { id: '4', name: 'Rohit Sharma', lastMessage: 'Thanks for the collaboration! 🎉', time: '1 day', unread: 0, online: false, avatar: 'R' },
-];
+interface Message {
+  id: string;
+  content: string;
+  senderId: string;
+  createdAt?: string;
+  senderName?: string;
+}
 
-const mockMessages = [
-  { id: '1', senderId: 'me', content: 'Hi Ananya! I loved your recent fashion content. Would you be interested in a collaboration for our summer collection?', time: '10:30 AM', read: true },
-  { id: '2', senderId: 'other', content: 'Thank you so much! I\'d love to hear more about the campaign. What kind of content are you looking for?', time: '10:32 AM', read: true },
-  { id: '3', senderId: 'me', content: 'We\'re looking for 2 Instagram Reels and 3 Stories showcasing our new summer line. Budget is ₹15,000.', time: '10:35 AM', read: true },
-  { id: '4', senderId: 'other', content: 'That sounds great! Let me share my portfolio. I have experience with similar fashion brands.', time: '10:38 AM', read: true },
-  { id: '5', senderId: 'other', content: 'Here\'s my latest lookbook reel — it got 50K views in 24 hours! I can create something similar for your brand. 📸', time: '10:40 AM', read: false },
-];
+// ── Local message store (per session) ─────────────────────────────
+// We build conversations from the discovery list + store messages locally
+// because the backend messaging endpoints require authenticated users with
+// proper businessId/creatorId records which are created after real signup.
+// This approach gives a real-time DM feel while persisting in sessionStorage.
+const MSG_KEY = (convId: string) => `pb_msgs_${convId}`;
+const CONV_KEY = 'pb_conversations';
 
+function loadConvs(): Conversation[] {
+  try { return JSON.parse(sessionStorage.getItem(CONV_KEY) || '[]'); } catch { return []; }
+}
+function saveConvs(c: Conversation[]) {
+  sessionStorage.setItem(CONV_KEY, JSON.stringify(c));
+}
+function loadMsgs(id: string): Message[] {
+  try { return JSON.parse(sessionStorage.getItem(MSG_KEY(id)) || '[]'); } catch { return []; }
+}
+function saveMsgs(id: string, msgs: Message[]) {
+  sessionStorage.setItem(MSG_KEY(id), JSON.stringify(msgs));
+}
+
+function timeLabel(iso?: string) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+// ── Component ────────────────────────────────────────────────────
 export default function MessagesPage() {
-  const [selectedChat, setSelectedChat] = useState<string>('1');
-  const [newMessage, setNewMessage] = useState('');
-  const [showMobileChat, setShowMobileChat] = useState(false);
+  const { user } = useUser();
+  const [searchParams] = useSearchParams();
+  const myId = user?.id ?? 'me';
+  const myName = user?.fullName ?? user?.firstName ?? 'You';
 
-  const activeContact = mockContacts.find((c) => c.id === selectedChat);
+  const [conversations, setConversations] = useState<Conversation[]>(loadConvs());
+  const [activeConvId, setActiveConvId] = useState<string | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [text, setText] = useState('');
+  const [search, setSearch] = useState('');
+  const [showChat, setShowChat] = useState(false);
 
-  const handleSend = () => {
-    if (!newMessage.trim()) return;
-    setNewMessage('');
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // ── Auto-open conversation from URL params (coming from creator profile) ──
+  useEffect(() => {
+    const creatorId = searchParams.get('creatorId');
+    const creatorName = searchParams.get('creatorName');
+    if (!creatorId || !creatorName) return;
+
+    setConversations((prev) => {
+      const existing = prev.find((c) => c.id === creatorId);
+      if (existing) {
+        setActiveConvId(creatorId);
+        setShowChat(true);
+        return prev;
+      }
+      const newConv: Conversation = {
+        id: creatorId,
+        otherPartyName: decodeURIComponent(creatorName),
+        lastMessage: '',
+        unreadCount: 0,
+      };
+      const updated = [newConv, ...prev];
+      saveConvs(updated);
+      setActiveConvId(creatorId);
+      setShowChat(true);
+      return updated;
+    });
+  }, [searchParams]);
+
+  // ── Load messages when conversation changes ──────────────────────
+  useEffect(() => {
+    if (!activeConvId) return;
+    setMessages(loadMsgs(activeConvId));
+  }, [activeConvId]);
+
+  // ── Auto-scroll to bottom ────────────────────────────────────────
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  // ── Send message ─────────────────────────────────────────────────
+  const sendMessage = useCallback(() => {
+    if (!text.trim() || !activeConvId) return;
+    const msg: Message = {
+      id: crypto.randomUUID(),
+      content: text.trim(),
+      senderId: myId,
+      senderName: myName,
+      createdAt: new Date().toISOString(),
+    };
+    const updated = [...loadMsgs(activeConvId), msg];
+    saveMsgs(activeConvId, updated);
+    setMessages(updated);
+
+    // Update conversation preview
+    setConversations((prev) => {
+      const next = prev.map((c) =>
+        c.id === activeConvId ? { ...c, lastMessage: text.trim(), lastMessageAt: new Date().toISOString() } : c
+      );
+      saveConvs(next);
+      return next;
+    });
+    setText('');
+  }, [text, activeConvId, myId, myName]);
+
+  const openConversation = (convId: string) => {
+    setActiveConvId(convId);
+    setMessages(loadMsgs(convId));
+    setShowChat(true);
+    // Mark read
+    setConversations((prev) => {
+      const next = prev.map((c) => c.id === convId ? { ...c, unreadCount: 0 } : c);
+      saveConvs(next);
+      return next;
+    });
   };
 
+  const activeConv = conversations.find((c) => c.id === activeConvId);
+  const filteredConvs = conversations.filter((c) =>
+    c.otherPartyName.toLowerCase().includes(search.toLowerCase())
+  );
+
   return (
-    <div className="h-[calc(100vh-8rem)] rounded-2xl border border-border/50 bg-card overflow-hidden flex">
-      {/* Sidebar: Conversations */}
-      <div className={`w-full md:w-[340px] border-r border-border/50 flex flex-col ${showMobileChat ? 'hidden md:flex' : 'flex'}`}>
-        {/* Search */}
+    <div className="h-[calc(100vh-7rem)] rounded-2xl border border-border/50 bg-card overflow-hidden flex">
+
+      {/* ── Sidebar ────────────────────────────────── */}
+      <div className={`w-full md:w-[320px] flex-shrink-0 border-r border-border/50 flex flex-col ${showChat ? 'hidden md:flex' : 'flex'}`}>
         <div className="p-4 border-b border-border/50">
+          <h2 className="font-bold text-base mb-3">Messages</h2>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <input type="text" placeholder="Search conversations..."
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-muted/50 text-sm border-0 focus:outline-none focus:ring-2 focus:ring-primary/20" />
+            <input
+              type="text"
+              placeholder="Search conversations…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 rounded-xl bg-muted/50 text-sm border-0 focus:outline-none focus:ring-2 focus:ring-primary/20"
+            />
           </div>
         </div>
 
-        {/* Contact List */}
         <div className="flex-1 overflow-y-auto">
-          {mockContacts.map((contact) => (
-            <button key={contact.id} onClick={() => { setSelectedChat(contact.id); setShowMobileChat(true); }}
-              className={`w-full flex items-center gap-3 p-4 hover:bg-muted/30 transition-colors border-b border-border/20 text-left
-                ${selectedChat === contact.id ? 'bg-primary/5 border-l-2 border-l-primary' : ''}`}>
-              <div className="relative flex-shrink-0">
-                <div className="w-11 h-11 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center text-sm font-bold text-primary">
-                  {contact.avatar}
+          {filteredConvs.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full gap-3 py-16 px-6 text-center">
+              <Users className="w-10 h-10 text-muted-foreground/30" />
+              <p className="text-sm text-muted-foreground">No conversations yet.</p>
+              <p className="text-xs text-muted-foreground">
+                Go to <span className="font-semibold text-primary">Discover Creators</span> and click <span className="font-semibold">"Send Message"</span> to start a chat.
+              </p>
+            </div>
+          ) : (
+            filteredConvs.map((conv) => (
+              <button
+                key={conv.id}
+                onClick={() => openConversation(conv.id)}
+                className={`w-full flex items-center gap-3 px-4 py-3.5 hover:bg-muted/30 transition-colors border-b border-border/20 text-left
+                  ${activeConvId === conv.id ? 'bg-primary/5 border-l-2 border-l-primary' : ''}`}
+              >
+                <div className="relative flex-shrink-0">
+                  <div className="w-11 h-11 rounded-full bg-gradient-to-br from-primary/20 to-violet-500/10 flex items-center justify-center text-sm font-bold text-primary">
+                    {conv.otherPartyName?.charAt(0) ?? '?'}
+                  </div>
                 </div>
-                {contact.online && (
-                  <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 border-2 border-card rounded-full" />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-sm truncate">{conv.otherPartyName}</span>
+                    {conv.lastMessageAt && (
+                      <span className="text-[10px] text-muted-foreground flex-shrink-0 ml-1">
+                        {timeLabel(conv.lastMessageAt)}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground truncate mt-0.5">
+                    {conv.lastMessage || 'Start the conversation'}
+                  </p>
+                </div>
+                {(conv.unreadCount ?? 0) > 0 && (
+                  <span className="bg-primary text-primary-foreground text-[10px] font-bold min-w-[18px] h-[18px] flex items-center justify-center rounded-full flex-shrink-0">
+                    {conv.unreadCount}
+                  </span>
                 )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex justify-between items-center">
-                  <span className="font-medium text-sm truncate">{contact.name}</span>
-                  <span className="text-[10px] text-muted-foreground flex-shrink-0 ml-2">{contact.time}</span>
-                </div>
-                <p className="text-xs text-muted-foreground truncate mt-0.5">{contact.lastMessage}</p>
-              </div>
-              {contact.unread > 0 && (
-                <span className="bg-primary text-primary-foreground text-[10px] font-bold min-w-[20px] h-5 flex items-center justify-center rounded-full flex-shrink-0">{contact.unread}</span>
-              )}
-            </button>
-          ))}
+              </button>
+            ))
+          )}
         </div>
       </div>
 
-      {/* Chat Area */}
-      <div className={`flex-1 flex flex-col ${!showMobileChat ? 'hidden md:flex' : 'flex'}`}>
-        {activeContact ? (
+      {/* ── Chat Area ─────────────────────────────── */}
+      <div className={`flex-1 flex flex-col ${!showChat ? 'hidden md:flex' : 'flex'}`}>
+        {activeConv ? (
           <>
-            {/* Chat Header */}
-            <div className="flex items-center justify-between px-4 lg:px-6 h-16 border-b border-border/50">
+            {/* Header */}
+            <div className="flex items-center justify-between px-4 h-16 border-b border-border/50 flex-shrink-0">
               <div className="flex items-center gap-3">
-                <button onClick={() => setShowMobileChat(false)} className="md:hidden p-1">
+                <button onClick={() => setShowChat(false)} className="md:hidden p-1 -ml-1 text-muted-foreground">
                   <ArrowLeft className="w-5 h-5" />
                 </button>
-                <div className="relative">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center text-sm font-bold text-primary">
-                    {activeContact.avatar}
-                  </div>
-                  {activeContact.online && <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 border-2 border-card rounded-full" />}
+                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary/20 to-violet-500/10 flex items-center justify-center text-sm font-bold text-primary">
+                  {activeConv.otherPartyName?.charAt(0)}
                 </div>
                 <div>
-                  <div className="font-semibold text-sm">{activeContact.name}</div>
-                  <div className="text-xs text-muted-foreground flex items-center gap-1">
-                    {activeContact.online ? (
-                      <><Circle className="w-2 h-2 fill-emerald-500 text-emerald-500" /> Online</>
-                    ) : 'Offline'}
-                  </div>
+                  <div className="font-semibold text-sm">{activeConv.otherPartyName}</div>
+                  <div className="text-xs text-emerald-500 font-medium">Creator</div>
                 </div>
               </div>
-              <div className="flex items-center gap-1">
-                <button className="p-2 rounded-lg hover:bg-muted/50 transition-colors"><Phone className="w-4 h-4 text-muted-foreground" /></button>
-                <button className="p-2 rounded-lg hover:bg-muted/50 transition-colors"><Video className="w-4 h-4 text-muted-foreground" /></button>
-                <button className="p-2 rounded-lg hover:bg-muted/50 transition-colors"><MoreVertical className="w-4 h-4 text-muted-foreground" /></button>
-              </div>
+              <button className="p-2 rounded-lg hover:bg-muted/50 transition-colors text-muted-foreground">
+                <MoreVertical className="w-4 h-4" />
+              </button>
             </div>
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-4">
-              {mockMessages.map((msg) => (
-                <motion.div key={msg.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-                  className={`flex ${msg.senderId === 'me' ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[75%] px-4 py-3 rounded-2xl text-sm leading-relaxed
-                    ${msg.senderId === 'me'
-                      ? 'bg-primary text-primary-foreground rounded-br-md'
-                      : 'bg-muted/50 rounded-bl-md'}`}>
-                    {msg.content}
-                    <div className={`flex items-center justify-end gap-1 mt-1 text-[10px] ${msg.senderId === 'me' ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
-                      {msg.time}
-                      {msg.senderId === 'me' && <CheckCheck className={`w-3 h-3 ${msg.read ? 'text-blue-300' : ''}`} />}
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
+            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              {messages.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full text-center gap-2">
+                  <MessageSquare className="w-10 h-10 text-muted-foreground/30" />
+                  <p className="text-sm text-muted-foreground">
+                    Say hi to <span className="font-semibold text-foreground">{activeConv.otherPartyName}</span>!
+                  </p>
+                  <p className="text-xs text-muted-foreground">Tell them about your campaign.</p>
+                </div>
+              ) : (
+                <AnimatePresence initial={false}>
+                  {messages.map((msg) => {
+                    const isMine = msg.senderId === myId;
+                    return (
+                      <motion.div
+                        key={msg.id}
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}
+                      >
+                        <div className={`max-w-[78%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed shadow-sm
+                          ${isMine
+                            ? 'bg-primary text-primary-foreground rounded-br-sm'
+                            : 'bg-muted rounded-bl-sm text-foreground'}`}>
+                          {msg.content}
+                          <div className={`flex items-center justify-end gap-1 mt-1 text-[10px] ${isMine ? 'text-primary-foreground/60' : 'text-muted-foreground'}`}>
+                            {timeLabel(msg.createdAt)}
+                            {isMine && <CheckCheck className="w-3 h-3" />}
+                          </div>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </AnimatePresence>
+              )}
+              <div ref={messagesEndRef} />
             </div>
 
             {/* Input */}
-            <div className="p-4 border-t border-border/50">
-              <div className="flex items-center gap-2">
-                <button className="p-2 rounded-lg hover:bg-muted/50 transition-colors text-muted-foreground"><Paperclip className="w-5 h-5" /></button>
-                <button className="p-2 rounded-lg hover:bg-muted/50 transition-colors text-muted-foreground"><Image className="w-5 h-5" /></button>
-                <input type="text" value={newMessage} onChange={(e) => setNewMessage(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                  placeholder="Type a message..."
-                  className="flex-1 px-4 py-2.5 rounded-xl bg-muted/50 text-sm border-0 focus:outline-none focus:ring-2 focus:ring-primary/20" />
-                <button className="p-2 rounded-lg hover:bg-muted/50 transition-colors text-muted-foreground"><Smile className="w-5 h-5" /></button>
-                <button onClick={handleSend}
-                  className="p-2.5 rounded-xl bg-primary text-primary-foreground hover:opacity-90 transition-all shadow-sm">
+            <div className="p-3 border-t border-border/50 flex-shrink-0">
+              <div className="flex items-center gap-2 bg-muted/40 rounded-2xl px-4 py-2">
+                <input
+                  type="text"
+                  value={text}
+                  onChange={(e) => setText(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
+                  placeholder={`Message ${activeConv.otherPartyName.split(' ')[0]}…`}
+                  className="flex-1 bg-transparent text-sm border-0 focus:outline-none py-1"
+                />
+                <button
+                  onClick={sendMessage}
+                  disabled={!text.trim()}
+                  className="p-2 rounded-xl bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-40 transition-all flex-shrink-0">
                   <Send className="w-4 h-4" />
                 </button>
               </div>
+              <p className="text-center text-[10px] text-muted-foreground mt-2">
+                Press Enter to send
+              </p>
             </div>
           </>
         ) : (
-          <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">
-            Select a conversation to start chatting
+          <div className="flex-1 flex flex-col items-center justify-center gap-3 text-center px-8">
+            <MessageSquare className="w-12 h-12 text-muted-foreground/20" />
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Select a conversation</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Or go to <span className="text-primary font-semibold">Discover Creators</span> to start one.
+              </p>
+            </div>
           </div>
         )}
       </div>
